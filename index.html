@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パーソナル行動指針ジェネレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Regal Harmony -->
+    <!-- Application Structure Plan: このアプリケーションは、ユーザーが自身の名前を入力することで、パーソナライズされた行動指針書を生成し、それを音声で聞くことができる単一ページの体験を提供します。構造はシンプルに3ステップで構成されます。1. 初期画面でユーザーに名前の入力を促す。2. ボタンクリックで入力フォームが非表示になり、ユーザー名が反映された指針書がフェードインで表示される。3. 表示された指針書の下に音声コントロール（再生/一時停止、停止）が現れ、ユーザーは自分のペースで指針を聴くことができる。この段階的な情報提示は、ユーザーを混乱させることなく、アプリの核心的価値である「パーソナルな激励」へとスムーズに導くために設計されています。 -->
+    <!-- Visualization & Content Choices: このアプリの目的はデータ可視化ではなく、テキストベースの自己啓発コンテンツをパーソナライズし、聴覚的に提供することです。そのためチャートライブラリは使用しません。主要な要素は以下の通りです。 情報: ナポレオン・ヒルの哲学に基づく行動指針書。 ゴール: ユーザーに自己肯定感と行動意欲を与える。 表現方法: 1. 入力フォーム(HTML/Tailwind): ユーザーインタラクションの開始点。 2. 動的テキストコンテンツ(JS/HTML): JavaScriptのテンプレートリテラルを用いて、ユーザー名を指針書に動的に埋め込みます。 3. 音声読み上げ(Web Speech API): 追加ライブラリ不要で、ブラウザ標準機能を用いてテキストを音声に変換し、アクセシビリティと利便性を高めます。 インタラクション: ユーザー名入力→生成ボタンクリック→指針書と音声コントロール表示→音声再生/一時停止/停止。このシンプルな流れが、ユーザー体験を直感的で強力なものにします。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f1ea;
+            color: #3d3d3d;
+        }
+        h1, h2, h3, .jp-serif {
+            font-family: 'Noto Serif JP', serif;
+        }
+        .card {
+            background-color: #ffffff;
+            border-left: 5px solid #c0a062;
+            transition: all 0.3s ease-in-out;
+        }
+        .btn-primary {
+            background-color: #3d3d3d;
+            color: #f4f1ea;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #5a5a5a;
+        }
+        .btn-secondary {
+            background-color: #c0a062;
+            color: #ffffff;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: #d4b87a;
+        }
+        .fade-in {
+            animation: fadeIn 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto p-4 sm:p-8 max-w-4xl">
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-[#3d3d3d] mb-2">パーソナル行動指針ジェネレーター</h1>
+            <p class="text-base sm:text-lg text-gray-600 jp-serif">ナポレオン・ヒルの哲学に基づき、あなただけの成功への道を照らし出す</p>
+        </header>
+
+        <main id="main-content">
+            <section id="input-section" class="w-full max-w-lg mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-lg">
+                 <div class="text-center">
+                    <h2 class="text-xl sm:text-2xl font-bold mb-4 jp-serif">あなたの名前を教えてください</h2>
+                    <p class="text-gray-600 mb-6">あなた専用の行動指針書を作成します。</p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="name-input" placeholder="例：山田 太郎" class="flex-grow w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c0a062] text-base">
+                        <button id="generate-btn" class="w-full sm:w-auto btn-primary font-bold px-6 py-3 rounded-lg flex-shrink-0">指針書を作成</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="guideline-section" class="hidden">
+                <h2 id="guideline-title" class="text-2xl sm:text-3xl font-bold text-center mb-8 jp-serif"></h2>
+                
+                <div id="guideline-content" class="space-y-6">
+                </div>
+
+                <div id="audio-controls" class="mt-8 text-center p-4 bg-gray-100 rounded-lg shadow-inner">
+                    <h3 class="text-lg sm:text-xl font-bold mb-4 jp-serif">指針を聴く</h3>
+                    <div class="flex justify-center items-center gap-4">
+                         <button id="play-pause-btn" class="btn-secondary font-bold py-3 px-5 sm:px-6 rounded-full flex items-center gap-2">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path id="play-icon" d="M6.3 2.841A1.5 1.5 0 0 1 9 4.089v11.823a1.5 1.5 0 0 1-2.7 1.247L2.25 12.5a1.5 1.5 0 0 1 0-2.494l4.05-4.164Z"></path><path id="pause-icon" class="hidden" d="M5 3.5a1.5 1.5 0 0 1 3 0v13a1.5 1.5 0 0 1-3 0v-13Zm8 0a1.5 1.5 0 0 1 3 0v13a1.5 1.5 0 0 1-3 0v-13Z"></path></svg>
+                            <span id="play-pause-text" class="text-base">再生</span>
+                        </button>
+                        <button id="stop-btn" class="btn-primary font-bold py-3 px-5 sm:px-6 rounded-full flex items-center gap-2">
+                           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M5.5 5.5A.5.5 0 0 1 6 5h9a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5v-9Z"></path></svg>
+                            <span class="text-base">停止</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const nameInput = document.getElementById('name-input');
+            const generateBtn = document.getElementById('generate-btn');
+            const inputSection = document.getElementById('input-section');
+            const guidelineSection = document.getElementById('guideline-section');
+            const guidelineTitle = document.getElementById('guideline-title');
+            const guidelineContent = document.getElementById('guideline-content');
+            const audioControls = document.getElementById('audio-controls');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const stopBtn = document.getElementById('stop-btn');
+            const playIcon = document.getElementById('play-icon');
+            const pauseIcon = document.getElementById('pause-icon');
+            const playPauseText = document.getElementById('play-pause-text');
+
+            let utterance = null;
+            let userName = 'あなた';
+
+            const principles = [
+                {
+                    chapter: "序文：行動こそが現実を創造する",
+                    text: "この指針書は、{{name}}が自らの人生の絶対的な創造主であることを宣言し、そのための行動原理を定めたものである。\n世界は、{{name}}が何者であるかによってではなく、 {{name}}がどう行動するか によって{{name}}を扱う。変化は外側から始まるのではない。全ては、{{name}}が自身にどう向き合うかという、内なる決断から始まる。\nこの指針を胸に刻み、日々実践することで、{{name}}は自らの望む現実を創造する。"
+                },
+                {
+                    chapter: "第一章：自己認識と信念の原則",
+                    articles: [
+                        { title: "第一条【自己尊敬】", text: "世界からの尊敬は、{{name}}が自らを尊敬することから始まる。何よりもまず、自分自身が敬意を払うに値する存在だと確信せよ。" },
+                        { title: "第二条【勝利者の振る舞い】", text: "天才と失敗者の違いは、その歩き方、すなわち自信の現れにある。常に「すでに成功した自分」として思考し、行動し、振る舞え。これは傲慢さではなく、未来を創造するための覚悟である。" },
+                        { title: "第三条【信念のリーダーシップ】", text: "他人の承認を待つな。{{name}}が自分を信じる時、初めて他者は{{name}}を信じる。ためらうな、自分を小さくするな。自信を持って歩めば、世界は{{name}}を助ける。" },
+                        { title: "第四条【弱さの定義】", text: "自らの弱さを直視し、認めよ。しかし、それが「{{name}}という人間」そのものを定義することを断じて許すな。それらは道に転がる石であり、乗り越えるべき課題に過ぎない。" },
+                        { title: "第五条【内なる声の選択】", text: "内なる対話が、現実の対話よりも重要だ。自己批判の声が聞こえたら、それを打ち消す、より強く、より賢明な声で応えよ。{{name}}の思考は、{{name}}が許可したものだけが住める聖域である。" }
+                    ]
+                },
+                {
+                    chapter: "第二章：情熱と目的の原則",
+                    articles: [
+                        { title: "第六条【執念への昇華】", text: "単なる「願望」では現実は変わらない。それを、夜も眠れなくなるほどの「燃え滾る情熱」と「執念」にまで昇華させよ。目的に取り憑かれよ。" },
+                        { title: "第七条【目標の具現化】", text: "思考は、紙に書かれた瞬間に力を得る。目標を具体的かつ力強い言葉で書き出し、それに重さと存在感を与えよ。" },
+                        { title: "第八条【現実化の視覚化】", text: "書き出した目標を毎日見つめよ。それがすでに現実になったかのように、五感で鮮明に感じろ。脳は、想像と現実を区別しない。{{name}}が確信を持って叩き込んだ未来を、脳は実現するために働き始める。" },
+                        { title: "第九条【失敗の再定義】", text: "失敗は終わりではない。それは、掛け替えのない成功に必要な「代償」であり、成功へと至る道の一部である。エジソンがそうであったように、失敗の数だけ成功に近づいていると知れ。" }
+                    ]
+                },
+                {
+                    chapter: "第三章：決断と行動の原則",
+                    articles: [
+                        { title: "第十条【決断の即時性】", text: "全ての敗者に共通するのは「決断できないこと」である。決断の先延ばしは、恐れの仮面をかぶった最大の敵だ。素早く、確信をもって決断せよ。" },
+                        { title: "第十一条【行動の優先順位】", text: "成功への道において、最悪の事態は失敗ではない。「何もしないこと」である。完璧なタイミングや全ての情報を待つな。今あるもので、今いる場所から、ただちに始めよ。" },
+                        { title: "第十二条【勇気の本質】", text: "勇気とは、恐怖がないことではない。恐怖を感じながらも、それでも一歩前に進むと決めることだ。行動が勇気を生み、勇気がさらなる行動を呼ぶ。" }
+                    ]
+                }
+            ];
+
+            function generateGuideline() {
+                userName = nameInput.value.trim() || 'あなた';
+                guidelineTitle.textContent = `${userName} 行動指針書`;
+
+                let fullTextForSpeech = `${userName} 行動指針書。\n\n`;
+                guidelineContent.innerHTML = '';
+
+                principles.forEach(principle => {
+                    const sectionHtml = document.createElement('div');
+                    sectionHtml.className = 'fade-in';
+                    
+                    if(principle.chapter.startsWith("序文")){
+                        const chapterTitle = document.createElement('p');
+                        chapterTitle.className = 'jp-serif text-lg font-bold mb-4 text-[#c0a062]';
+                        chapterTitle.textContent = principle.chapter;
+                        sectionHtml.appendChild(chapterTitle);
+
+                        const textContent = document.createElement('p');
+                        textContent.className = 'text-gray-700 leading-relaxed whitespace-pre-line';
+                        const personalizedText = principle.text.replace(/{{name}}/g, userName);
+                        textContent.textContent = personalizedText;
+                        sectionHtml.appendChild(textContent);
+                        fullTextForSpeech += `${principle.chapter}。\n${personalizedText}\n\n`;
+                    } else {
+                        const chapterTitle = document.createElement('h3');
+                        chapterTitle.className = 'text-xl sm:text-2xl font-bold mb-4 jp-serif border-b-2 border-[#c0a062] pb-2';
+                        chapterTitle.textContent = principle.chapter;
+                        sectionHtml.appendChild(chapterTitle);
+                        fullTextForSpeech += `${principle.chapter}。\n\n`;
+
+                        principle.articles.forEach(article => {
+                            const articleCard = document.createElement('div');
+                            articleCard.className = 'card p-4 sm:p-6 rounded-lg shadow-md';
+                            
+                            const articleTitle = document.createElement('h4');
+                            articleTitle.className = 'text-lg sm:text-xl font-bold mb-2 jp-serif';
+                            articleTitle.textContent = article.title;
+                            articleCard.appendChild(articleTitle);
+                            
+                            const articleText = document.createElement('p');
+                            articleText.className = 'text-gray-700 leading-relaxed';
+                            const personalizedText = article.text.replace(/{{name}}/g, userName);
+                            articleText.textContent = personalizedText;
+                            articleCard.appendChild(articleText);
+
+                            sectionHtml.appendChild(articleCard);
+                            fullTextForSpeech += `${article.title}。\n${personalizedText}\n\n`;
+                        });
+                    }
+                    guidelineContent.appendChild(sectionHtml);
+                });
+
+                inputSection.classList.add('hidden');
+                guidelineSection.classList.remove('hidden');
+                guidelineSection.classList.add('fade-in');
+
+                setupSpeechSynthesis(fullTextForSpeech);
+            }
+
+            function setupSpeechSynthesis(text) {
+                if (speechSynthesis.speaking || speechSynthesis.pending) {
+                    speechSynthesis.cancel();
+                }
+                utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ja-JP';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+
+                utterance.onstart = () => {
+                    playPauseText.textContent = '一時停止';
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                };
+
+                utterance.onend = () => {
+                    resetPlayButton();
+                };
+
+                utterance.onpause = () => {
+                    playPauseText.textContent = '再開';
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                };
+                
+                utterance.onresume = () => {
+                    playPauseText.textContent = '一時停止';
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                };
+            }
+
+            function resetPlayButton() {
+                playPauseText.textContent = '再生';
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+            }
+
+            playPauseBtn.addEventListener('click', () => {
+                if (!utterance) return;
+                
+                if (speechSynthesis.paused) {
+                    speechSynthesis.resume();
+                } else if (speechSynthesis.speaking) {
+                    speechSynthesis.pause();
+                } else {
+                    speechSynthesis.speak(utterance);
+                }
+            });
+
+            stopBtn.addEventListener('click', () => {
+                speechSynthesis.cancel();
+                resetPlayButton();
+            });
+            
+            generateBtn.addEventListener('click', generateGuideline);
+            nameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateGuideline();
+                }
+            });
+
+            window.addEventListener('beforeunload', () => {
+                speechSynthesis.cancel();
+            });
+        });
+    </script>
+</body>
+</html>
