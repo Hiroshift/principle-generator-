@@ -49,6 +49,35 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #c0a062;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error-message {
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+        .success-message {
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -60,35 +89,96 @@
         </header>
 
         <main id="main-content">
+            <!-- エラーメッセージ表示エリア -->
+            <div id="message-area" class="mb-4"></div>
+
             <section id="input-section" class="w-full max-w-lg mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-lg">
                  <div class="text-center">
                     <h2 class="text-xl sm:text-2xl font-bold mb-4 jp-serif">あなたの名前を教えてください</h2>
                     <p class="text-gray-600 mb-6">あなた専用の行動指針書を作成します。</p>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="name-input" placeholder="例：山田 太郎" class="flex-grow w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c0a062] text-base">
-                        <button id="generate-btn" class="w-full sm:w-auto btn-primary font-bold px-6 py-3 rounded-lg flex-shrink-0">指針書を作成</button>
-                    </div>
+                    <form id="name-form" class="space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input 
+                                type="text" 
+                                id="name-input" 
+                                name="name"
+                                placeholder="例：山田 太郎" 
+                                class="flex-grow w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c0a062] text-base"
+                                aria-label="お名前を入力してください"
+                                required
+                                maxlength="50"
+                            >
+                            <button 
+                                type="submit"
+                                id="generate-btn" 
+                                class="w-full sm:w-auto btn-primary font-bold px-6 py-3 rounded-lg flex-shrink-0 flex items-center justify-center gap-2"
+                                aria-label="指針書を生成する"
+                            >
+                                <span id="generate-btn-text">指針書を作成</span>
+                                <div id="loading-spinner" class="loading hidden"></div>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </section>
 
             <section id="guideline-section" class="hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <button 
+                        id="back-btn" 
+                        class="btn-secondary font-bold px-4 py-2 rounded-lg flex items-center gap-2"
+                        aria-label="入力画面に戻る"
+                    >
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                        戻る
+                    </button>
+                    <button 
+                        id="regenerate-btn" 
+                        class="btn-primary font-bold px-4 py-2 rounded-lg flex items-center gap-2"
+                        aria-label="指針書を再生成する"
+                    >
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                        </svg>
+                        再生成
+                    </button>
+                </div>
+
                 <h2 id="guideline-title" class="text-2xl sm:text-3xl font-bold text-center mb-8 jp-serif"></h2>
                 
-                <div id="guideline-content" class="space-y-6">
+                <div id="guideline-content" class="space-y-6" role="main" aria-label="行動指針書の内容">
                 </div>
 
                 <div id="audio-controls" class="mt-8 text-center p-4 bg-gray-100 rounded-lg shadow-inner">
                     <h3 class="text-lg sm:text-xl font-bold mb-4 jp-serif">指針を聴く</h3>
                     <div class="flex justify-center items-center gap-4">
-                         <button id="play-pause-btn" class="btn-secondary font-bold py-3 px-5 sm:px-6 rounded-full flex items-center gap-2">
-                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path id="play-icon" d="M6.3 2.841A1.5 1.5 0 0 1 9 4.089v11.823a1.5 1.5 0 0 1-2.7 1.247L2.25 12.5a1.5 1.5 0 0 1 0-2.494l4.05-4.164Z"></path><path id="pause-icon" class="hidden" d="M5 3.5a1.5 1.5 0 0 1 3 0v13a1.5 1.5 0 0 1-3 0v-13Zm8 0a1.5 1.5 0 0 1 3 0v13a1.5 1.5 0 0 1-3 0v-13Z"></path></svg>
+                         <button 
+                            id="play-pause-btn" 
+                            class="btn-secondary font-bold py-3 px-5 sm:px-6 rounded-full flex items-center gap-2"
+                            aria-label="音声を再生する"
+                            disabled
+                        >
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path id="play-icon" d="M6.3 2.841A1.5 1.5 0 0 1 9 4.089v11.823a1.5 1.5 0 0 1-2.7 1.247L2.25 12.5a1.5 1.5 0 0 1 0-2.494l4.05-4.164Z"></path>
+                                <path id="pause-icon" class="hidden" d="M5 3.5a1.5 1.5 0 0 1 3 0v13a1.5 1.5 0 0 1-3 0v-13Zm8 0a1.5 1.5 0 0 1 3 0v13a1.5 1.5 0 0 1-3 0v-13Z"></path>
+                            </svg>
                             <span id="play-pause-text" class="text-base">再生</span>
                         </button>
-                        <button id="stop-btn" class="btn-primary font-bold py-3 px-5 sm:px-6 rounded-full flex items-center gap-2">
-                           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M5.5 5.5A.5.5 0 0 1 6 5h9a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5v-9Z"></path></svg>
+                        <button 
+                            id="stop-btn" 
+                            class="btn-primary font-bold py-3 px-5 sm:px-6 rounded-full flex items-center gap-2"
+                            aria-label="音声を停止する"
+                            disabled
+                        >
+                           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M5.5 5.5A.5.5 0 0 1 6 5h9a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5H6a.5.5 0 0 1-.5-.5v-9Z"></path>
+                            </svg>
                             <span class="text-base">停止</span>
                         </button>
                     </div>
+                    <p id="audio-status" class="text-sm text-gray-600 mt-2">音声機能を利用するには、ブラウザの音声許可が必要です</p>
                 </div>
             </section>
         </main>
@@ -96,8 +186,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // DOM要素の取得
+            const nameForm = document.getElementById('name-form');
             const nameInput = document.getElementById('name-input');
             const generateBtn = document.getElementById('generate-btn');
+            const generateBtnText = document.getElementById('generate-btn-text');
+            const loadingSpinner = document.getElementById('loading-spinner');
             const inputSection = document.getElementById('input-section');
             const guidelineSection = document.getElementById('guideline-section');
             const guidelineTitle = document.getElementById('guideline-title');
@@ -108,9 +202,51 @@
             const playIcon = document.getElementById('play-icon');
             const pauseIcon = document.getElementById('pause-icon');
             const playPauseText = document.getElementById('play-pause-text');
+            const backBtn = document.getElementById('back-btn');
+            const regenerateBtn = document.getElementById('regenerate-btn');
+            const messageArea = document.getElementById('message-area');
+            const audioStatus = document.getElementById('audio-status');
 
+            // 状態管理
             let utterance = null;
             let userName = 'あなた';
+            let isSpeechSupported = false;
+
+            // 音声APIのサポート確認
+            function checkSpeechSupport() {
+                if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
+                    isSpeechSupported = true;
+                    audioStatus.textContent = '音声機能が利用可能です';
+                    playPauseBtn.disabled = false;
+                    stopBtn.disabled = false;
+                } else {
+                    isSpeechSupported = false;
+                    audioStatus.textContent = 'お使いのブラウザは音声機能をサポートしていません';
+                    playPauseBtn.disabled = true;
+                    stopBtn.disabled = true;
+                }
+            }
+
+            // メッセージ表示関数
+            function showMessage(message, type = 'error') {
+                messageArea.innerHTML = `<div class="${type === 'error' ? 'error-message' : 'success-message'}" role="alert">${message}</div>`;
+                setTimeout(() => {
+                    messageArea.innerHTML = '';
+                }, 5000);
+            }
+
+            // ローディング状態の管理
+            function setLoading(isLoading) {
+                if (isLoading) {
+                    generateBtn.disabled = true;
+                    generateBtnText.textContent = '生成中...';
+                    loadingSpinner.classList.remove('hidden');
+                } else {
+                    generateBtn.disabled = false;
+                    generateBtnText.textContent = '指針書を作成';
+                    loadingSpinner.classList.add('hidden');
+                }
+            }
 
             const principles = [
                 {
@@ -147,94 +283,145 @@
             ];
 
             function generateGuideline() {
-                userName = nameInput.value.trim() || 'あなた';
-                guidelineTitle.textContent = `${userName} 行動指針書`;
-
-                let fullTextForSpeech = `${userName} 行動指針書。\n\n`;
-                guidelineContent.innerHTML = '';
-
-                principles.forEach(principle => {
-                    const sectionHtml = document.createElement('div');
-                    sectionHtml.className = 'fade-in';
+                try {
+                    setLoading(true);
                     
-                    if(principle.chapter.startsWith("序文")){
-                        const chapterTitle = document.createElement('p');
-                        chapterTitle.className = 'jp-serif text-lg font-bold mb-4 text-[#c0a062]';
-                        chapterTitle.textContent = principle.chapter;
-                        sectionHtml.appendChild(chapterTitle);
-
-                        const textContent = document.createElement('p');
-                        textContent.className = 'text-gray-700 leading-relaxed whitespace-pre-line';
-                        const personalizedText = principle.text.replace(/{{name}}/g, userName);
-                        textContent.textContent = personalizedText;
-                        sectionHtml.appendChild(textContent);
-                        fullTextForSpeech += `${principle.chapter}。\n${personalizedText}\n\n`;
-                    } else {
-                        const chapterTitle = document.createElement('h3');
-                        chapterTitle.className = 'text-xl sm:text-2xl font-bold mb-4 jp-serif border-b-2 border-[#c0a062] pb-2';
-                        chapterTitle.textContent = principle.chapter;
-                        sectionHtml.appendChild(chapterTitle);
-                        fullTextForSpeech += `${principle.chapter}。\n\n`;
-
-                        principle.articles.forEach(article => {
-                            const articleCard = document.createElement('div');
-                            articleCard.className = 'card p-4 sm:p-6 rounded-lg shadow-md';
-                            
-                            const articleTitle = document.createElement('h4');
-                            articleTitle.className = 'text-lg sm:text-xl font-bold mb-2 jp-serif';
-                            articleTitle.textContent = article.title;
-                            articleCard.appendChild(articleTitle);
-                            
-                            const articleText = document.createElement('p');
-                            articleText.className = 'text-gray-700 leading-relaxed';
-                            const personalizedText = article.text.replace(/{{name}}/g, userName);
-                            articleText.textContent = personalizedText;
-                            articleCard.appendChild(articleText);
-
-                            sectionHtml.appendChild(articleCard);
-                            fullTextForSpeech += `${article.title}。\n${personalizedText}\n\n`;
-                        });
+                    // 名前の検証
+                    const inputName = nameInput.value.trim();
+                    if (!inputName) {
+                        showMessage('名前を入力してください');
+                        setLoading(false);
+                        return;
                     }
-                    guidelineContent.appendChild(sectionHtml);
-                });
 
-                inputSection.classList.add('hidden');
-                guidelineSection.classList.remove('hidden');
-                guidelineSection.classList.add('fade-in');
+                    if (inputName.length > 50) {
+                        showMessage('名前は50文字以内で入力してください');
+                        setLoading(false);
+                        return;
+                    }
 
-                setupSpeechSynthesis(fullTextForSpeech);
+                    userName = inputName;
+                    guidelineTitle.textContent = `${userName} 行動指針書`;
+
+                    let fullTextForSpeech = `${userName} 行動指針書。\n\n`;
+                    guidelineContent.innerHTML = '';
+
+                    // 指針書の生成
+                    principles.forEach((principle, index) => {
+                        const sectionHtml = document.createElement('div');
+                        sectionHtml.className = 'fade-in';
+                        sectionHtml.style.animationDelay = `${index * 0.2}s`;
+                        
+                        if(principle.chapter.startsWith("序文")){
+                            const chapterTitle = document.createElement('p');
+                            chapterTitle.className = 'jp-serif text-lg font-bold mb-4 text-[#c0a062]';
+                            chapterTitle.textContent = principle.chapter;
+                            sectionHtml.appendChild(chapterTitle);
+
+                            const textContent = document.createElement('p');
+                            textContent.className = 'text-gray-700 leading-relaxed whitespace-pre-line';
+                            const personalizedText = principle.text.replace(/{{name}}/g, userName);
+                            textContent.textContent = personalizedText;
+                            sectionHtml.appendChild(textContent);
+                            fullTextForSpeech += `${principle.chapter}。\n${personalizedText}\n\n`;
+                        } else {
+                            const chapterTitle = document.createElement('h3');
+                            chapterTitle.className = 'text-xl sm:text-2xl font-bold mb-4 jp-serif border-b-2 border-[#c0a062] pb-2';
+                            chapterTitle.textContent = principle.chapter;
+                            sectionHtml.appendChild(chapterTitle);
+                            fullTextForSpeech += `${principle.chapter}。\n\n`;
+
+                            principle.articles.forEach(article => {
+                                const articleCard = document.createElement('div');
+                                articleCard.className = 'card p-4 sm:p-6 rounded-lg shadow-md';
+                                
+                                const articleTitle = document.createElement('h4');
+                                articleTitle.className = 'text-lg sm:text-xl font-bold mb-2 jp-serif';
+                                articleTitle.textContent = article.title;
+                                articleCard.appendChild(articleTitle);
+                                
+                                const articleText = document.createElement('p');
+                                articleText.className = 'text-gray-700 leading-relaxed';
+                                const personalizedText = article.text.replace(/{{name}}/g, userName);
+                                articleText.textContent = personalizedText;
+                                articleCard.appendChild(articleText);
+
+                                sectionHtml.appendChild(articleCard);
+                                fullTextForSpeech += `${article.title}。\n${personalizedText}\n\n`;
+                            });
+                        }
+                        guidelineContent.appendChild(sectionHtml);
+                    });
+
+                    // 画面遷移
+                    inputSection.classList.add('hidden');
+                    guidelineSection.classList.remove('hidden');
+                    guidelineSection.classList.add('fade-in');
+
+                    // 音声設定
+                    if (isSpeechSupported) {
+                        setupSpeechSynthesis(fullTextForSpeech);
+                    }
+
+                    showMessage('指針書が正常に生成されました', 'success');
+                    
+                } catch (error) {
+                    console.error('指針書生成エラー:', error);
+                    showMessage('指針書の生成中にエラーが発生しました。もう一度お試しください。');
+                } finally {
+                    setLoading(false);
+                }
             }
 
             function setupSpeechSynthesis(text) {
-                if (speechSynthesis.speaking || speechSynthesis.pending) {
-                    speechSynthesis.cancel();
+                try {
+                    if (speechSynthesis.speaking || speechSynthesis.pending) {
+                        speechSynthesis.cancel();
+                    }
+                    
+                    utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'ja-JP';
+                    utterance.rate = 0.9; // 少し遅くして聞きやすく
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+
+                    utterance.onstart = () => {
+                        playPauseText.textContent = '一時停止';
+                        playIcon.classList.add('hidden');
+                        pauseIcon.classList.remove('hidden');
+                        audioStatus.textContent = '音声を再生中...';
+                    };
+
+                    utterance.onend = () => {
+                        resetPlayButton();
+                        audioStatus.textContent = '音声再生が完了しました';
+                    };
+
+                    utterance.onpause = () => {
+                        playPauseText.textContent = '再開';
+                        playIcon.classList.remove('hidden');
+                        pauseIcon.classList.add('hidden');
+                        audioStatus.textContent = '音声を一時停止中';
+                    };
+                    
+                    utterance.onresume = () => {
+                        playPauseText.textContent = '一時停止';
+                        playIcon.classList.add('hidden');
+                        pauseIcon.classList.remove('hidden');
+                        audioStatus.textContent = '音声を再生中...';
+                    };
+
+                    utterance.onerror = (event) => {
+                        console.error('音声エラー:', event.error);
+                        resetPlayButton();
+                        audioStatus.textContent = '音声の再生中にエラーが発生しました';
+                        showMessage('音声の再生中にエラーが発生しました。ブラウザの設定を確認してください。');
+                    };
+
+                } catch (error) {
+                    console.error('音声設定エラー:', error);
+                    showMessage('音声機能の初期化に失敗しました');
                 }
-                utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'ja-JP';
-                utterance.rate = 1.0;
-                utterance.pitch = 1.0;
-
-                utterance.onstart = () => {
-                    playPauseText.textContent = '一時停止';
-                    playIcon.classList.add('hidden');
-                    pauseIcon.classList.remove('hidden');
-                };
-
-                utterance.onend = () => {
-                    resetPlayButton();
-                };
-
-                utterance.onpause = () => {
-                    playPauseText.textContent = '再開';
-                    playIcon.classList.remove('hidden');
-                    pauseIcon.classList.add('hidden');
-                };
-                
-                utterance.onresume = () => {
-                    playPauseText.textContent = '一時停止';
-                    playIcon.classList.add('hidden');
-                    pauseIcon.classList.remove('hidden');
-                };
             }
 
             function resetPlayButton() {
@@ -243,33 +430,71 @@
                 pauseIcon.classList.add('hidden');
             }
 
+            function goBack() {
+                speechSynthesis.cancel();
+                guidelineSection.classList.add('hidden');
+                inputSection.classList.remove('hidden');
+                nameInput.focus();
+                messageArea.innerHTML = '';
+            }
+
+            // イベントリスナーの設定
+            nameForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                generateGuideline();
+            });
+
             playPauseBtn.addEventListener('click', () => {
-                if (!utterance) return;
+                if (!utterance || !isSpeechSupported) return;
                 
-                if (speechSynthesis.paused) {
-                    speechSynthesis.resume();
-                } else if (speechSynthesis.speaking) {
-                    speechSynthesis.pause();
-                } else {
-                    speechSynthesis.speak(utterance);
+                try {
+                    if (speechSynthesis.paused) {
+                        speechSynthesis.resume();
+                    } else if (speechSynthesis.speaking) {
+                        speechSynthesis.pause();
+                    } else {
+                        speechSynthesis.speak(utterance);
+                    }
+                } catch (error) {
+                    console.error('音声操作エラー:', error);
+                    showMessage('音声の操作中にエラーが発生しました');
                 }
             });
 
             stopBtn.addEventListener('click', () => {
-                speechSynthesis.cancel();
-                resetPlayButton();
+                try {
+                    speechSynthesis.cancel();
+                    resetPlayButton();
+                    audioStatus.textContent = '音声を停止しました';
+                } catch (error) {
+                    console.error('音声停止エラー:', error);
+                }
             });
             
-            generateBtn.addEventListener('click', generateGuideline);
+            backBtn.addEventListener('click', goBack);
+            
+            regenerateBtn.addEventListener('click', () => {
+                speechSynthesis.cancel();
+                generateGuideline();
+            });
+
             nameInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
+                    e.preventDefault();
                     generateGuideline();
                 }
             });
 
+            // 初期化
+            checkSpeechSupport();
+
+            // ページ離脱時の音声停止
             window.addEventListener('beforeunload', () => {
                 speechSynthesis.cancel();
             });
+
+            // フォーカス管理
+            nameInput.focus();
         });
     </script>
 </body>
